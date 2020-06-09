@@ -7,7 +7,13 @@ project(turtlesim_cleaner)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS 
+	roscpp
+	rospy
+	std_msgs
+	geometry_msgs
+	message_generation
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -101,7 +107,7 @@ find_package(catkin REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES turtlesim_cleaner
-#  CATKIN_DEPENDS other_catkin_pkg
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -200,3 +206,9 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+## Declare a cpp executable
+add_executable(robot_cleaner_node src/robot_cleaner.cpp)
+target_link_libraries(robot_cleaner_node ${catkin_LIBRARIES})
+add_dependencies(robot_cleaner_node beginner_tutorials_gencpp)
+include_directories(${catkin_INCLUDE_DIRS}) 
