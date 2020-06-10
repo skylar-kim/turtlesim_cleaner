@@ -7,6 +7,11 @@ import math
 import time
 from std_srvs.srv import Empty
 
+turtlesim_pose = Pose()
+turtlesim_pose_x = 0
+turtlesim_pose_y = 0
+turtlesim_pose_theta = 0
+
 def move(speed, distance, isForward):
 	vel_msg = Twist()
 
@@ -62,6 +67,7 @@ def rotate(angular_speed, relative_angle, clockwise):
 
 	vel_msg.angular.x = 0
 	vel_msg.angular.y = 0
+	vel_msg.angular.z = 0
 
 	if (clockwise):
 		vel_msg.angular.z = -abs(angular_speed)
@@ -95,6 +101,92 @@ def rotate(angular_speed, relative_angle, clockwise):
 def degrees2radians(angle_in_degrees):
 	return angle_in_degrees * (math.pi / 180.0)
 
+def setDesiredOrientation(desired_angle_radians):
+	global turtlesim_pose
+
+	# to find the relative angle, subtract the 
+	relative_angle_radians = desired_angle_radians - turtlesim_pose.theta
+	clockwise = True if (relative_angle_radians < 0) else False
+
+	rotate(degrees2radians(10), abs(relative_angle_radians), clockwise)
+
+
+def poseCallback(pose_message):
+	global turtlesim_pose_x
+	global turtlesim_pose_y
+	global turtlesim_pose_theta
+
+	# this is setting the turtlesim_pose to the last updated message
+	# from the callback function
+	turtlesim_pose_x = pose_message.x
+	turtlesim_pose_y = pose_message.y
+	turtlesim_pose_theta = pose_message.theta
+
+def getDistance(x1,y1,x2,y2):
+	return math.sqrt(pow((x1-x2),2) + pow((y1-y2),2))
+
+def moveGoal(goal_pose, distance_tolerance):
+	global turtlesim_pose_x
+	global turtlesim_pose_y
+	global turtlesim_pose_theta
+
+	vel_msg = Twist()
+
+	loop_rate = rospy.Rate(10)
+
+	while (getDistance(turtlesim_pose_x, turtlesim_pose_y, goal_pose.x, goal_pose.y) > distance_tolerance):
+		# Proportional Controller
+		vel_msg.linear.x = 1.5 * getDistance(turtlesim_pose_x, turtlesim_pose_y, goal_pose.x, goal_pose.y)
+		vel_msg.linear.y = 0
+		vel_msg.linear.z = 0
+
+		# define angular velocity in the z-axis
+		vel_msg.angular.x = 0
+		vel_msg.angular.y = 0
+		vel_msg.angular.z = 4 * (math.atan2(goal_pose.y - turtlesim_pose_y, goal_pose.x - turtlesim_pose_x)-turtlesim_pose_theta)
+
+		# publish the message...will this work???
+		velocity_publisher.publish(vel_msg)
+
+		loop_rate.sleep()
+
+	rospy.loginfo("End moveGoal")
+
+	# force stop the robot
+	vel_msg.linear.x = 0
+	vel_msg.angular.z = 0
+	velocity_publisher.publish(vel_msg)
+
+def gridClean():
+    desired_pose = Pose()
+    desired_pose.x = 1
+    desired_pose.y = 1
+    desired_pose.theta = 0
+ 	
+    
+
+    moveGoal(desired_pose, 0.01)
+    setDesiredOrientation(degrees2radians(0))
+    
+ 
+    # move(2.0, 9.0, True)
+    # rotate(degrees2radians(20), degrees2radians(90), False)
+    # move(2.0, 9.0, True)
+    # rotate(degrees2radians(20), degrees2radians(90), False)
+    # move(2.0, 1.0, True)
+    # rotate(degrees2radians(20), degrees2radians(90), False)
+    # move(2.0, 9.0, True)
+    # rotate(degrees2radians(30), degrees2radians(90), True)
+    # move(2.0, 1.0, True)
+    # rotate(degrees2radians(30), degrees2radians(90), True)
+    # move(2.0, 9.0, True)
+    pass
+
+
+
+
+
+
 
 
 
@@ -107,14 +199,24 @@ if __name__ == '__main__':
         cmd_vel_topic='/turtle1/cmd_vel'
         velocity_publisher = rospy.Publisher(cmd_vel_topic, Twist, queue_size=10)
         
-        #position_topic = "/turtle1/pose"
-        #pose_subscriber = rospy.Subscriber(position_topic, Pose, poseCallback) 
+        
+        pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, poseCallback) 
         time.sleep(2)
 
-        move(1.0, 5.0, False)
-        rotate(degrees2radians(30), degrees2radians(90), True)
-        #go_to_goal(1.0, 1.0) 
+        # move(1.0, 5.0, False)
+        # rotate(degrees2radians(30), degrees2radians(90), True)
+
+        # setDesiredOrientation(degrees2radians(90))
+        # setDesiredOrientation(degrees2radians(-90))
+        # setDesiredOrientation(degrees2radians(-90))
+
+        # turtlesim_pose_x = 1
+        # turtlesim_pose_y = 1
+        # turtlesim_pose_theta = 0
+
+        # moveGoal(turtlesim_pose, 0.01) 
         #setDesiredOrientation(math.radians(90))
+        gridClean()
        
     except rospy.ROSInterruptException:
         rospy.loginfo("node terminated.")
