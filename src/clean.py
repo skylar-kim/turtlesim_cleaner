@@ -42,15 +42,58 @@ def move(speed, distance, isForward):
 		loop_rate.sleep()
 
 		if (current_distance > distance):
-                    rospy.loginfo("reached")
+                    rospy.loginfo("reached distance")
                     break
 
 	
 	vel_msg.linear.x = 0
 	velocity_publisher.publish(vel_msg)
 
+def rotate(angular_speed, relative_angle, clockwise):
+	# clockwise = negative angle
+	# counter clockwise = positive angle
+	vel_msg = Twist()
 
+	current_angle = 0.0
 
+	vel_msg.linear.x = 0
+	vel_msg.linear.y = 0
+	vel_msg.linear.z = 0
+
+	vel_msg.angular.x = 0
+	vel_msg.angular.y = 0
+
+	if (clockwise):
+		vel_msg.angular.z = -abs(angular_speed)
+	else:
+		vel_msg.angular.z = abs(angular_speed)
+
+	# the time before entering into the loop
+	t0 = rospy.Time.now().to_sec()
+
+	# loop will execute 10 times per second
+	loop_rate = rospy.Rate(10)
+
+	# publish the velocity message
+	while True:
+		velocity_publisher.publish(vel_msg)
+
+		# the current time
+		t1 = rospy.Time.now().to_sec()
+
+		current_angle = angular_speed * (t1-t0)
+
+		loop_rate.sleep()
+
+		if (current_angle > relative_angle):
+			rospy.loginfo("reached destination angle")
+			break
+
+	vel_msg.angular.z = 0
+	velocity_publisher.publish(vel_msg)
+
+def degrees2radians(angle_in_degrees):
+	return angle_in_degrees * (math.pi / 180.0)
 
 
 
@@ -68,8 +111,8 @@ if __name__ == '__main__':
         #pose_subscriber = rospy.Subscriber(position_topic, Pose, poseCallback) 
         time.sleep(2)
 
-        move(1.0, 2.0, False)
-        #rotate(30, 90, True)
+        move(1.0, 5.0, False)
+        rotate(degrees2radians(30), degrees2radians(90), True)
         #go_to_goal(1.0, 1.0) 
         #setDesiredOrientation(math.radians(90))
        
