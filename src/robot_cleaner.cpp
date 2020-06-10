@@ -1,18 +1,25 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
+#include "turtlesim/Pose.h"
+#include <sstream>
+
+using namespace std;
 
 // global variable declarations
 ros::Publisher velocity_publisher;
+ros::Subscriber pose_subscriber;
+turtlesim::Pose turtlesim_pose;
 
 const double PI = 3.14159265359;
 
 
-// method to move the robot straight forward
+// methods
 void move(double speed, double distance, bool isForward);
 void rotate(double angular_speed, double relative_angle, bool clockwise);
 double degrees2radians(double angle_in_degrees);
+double setDesiredOrientation(double desired_angle_radians);
+void poseCallback(const turtlesim::Pose::ConstPtr & pose_message);
 
-using namespace std;
 
 int main(int argc, char **argv) 
 {
@@ -26,24 +33,37 @@ int main(int argc, char **argv)
 	double angular_speed;
 	double angle;
 	bool clockwise;
+
 	// declare the publisher 
 	velocity_publisher = n.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
+	// the pose subscriber is subscribed to the turtle1/pose topic and call the
+	// poseCallback function
+	pose_subscriber = n.subscribe("/turtle1/pose", 10, poseCallback);
 
-	cout << "Enter your speed: ";
-	cin >> speed;
-	cout << "Enter your distance: ";
-	cin >> distance;
-	cout << "Forward?: ";
-	cin >> isForward;
-	move(speed, distance, isForward);
+	ROS_INFO("\n\n\n*********START TESTING*********\n");
 
-	cout << "Enter your angular speed (degree/sec): ";
-	cin >> angular_speed;
-	cout << "Enter desired angle (degrees): ";
-	cin >> angle;
-	cout << "Going clockwise? (1 for yes, 0 for no): ";
-	cin >> clockwise;
-	rotate(degrees2radians(angular_speed), degrees2radians(angle), clockwise);
+	// cout << "Enter your speed: ";
+	// cin >> speed;
+	// cout << "Enter your distance: ";
+	// cin >> distance;
+	// cout << "Forward?: ";
+	// cin >> isForward;
+	// move(speed, distance, isForward);
+
+	// cout << "Enter your angular speed (degree/sec): ";
+	// cin >> angular_speed;
+	// cout << "Enter desired angle (degrees): ";
+	// cin >> angle;
+	// cout << "Going clockwise? (1 for yes, 0 for no): ";
+	// cin >> clockwise;
+	// rotate(degrees2radians(angular_speed), degrees2radians(angle), clockwise);
+
+	setDesiredOrientation(degrees2radians(120));
+	ros::Rate loop_rate(0.5);
+	loop_rate.sleep();
+	setDesiredOrientation(degrees2radians(-60));
+	loop_rate.sleep();
+	setDesiredOrientation(degrees2radians(0));
 
 	ros::spin();
 	
@@ -171,4 +191,25 @@ void rotate(double angular_speed, double relative_angle, bool clockwise)
 double degrees2radians(double angle_in_degrees) 
 {
 	return angle_in_degrees * (PI / 180.0);
+}
+
+double setDesiredOrientation(double desired_angle_radians)
+{
+	// to find the relative angle, substract the turtlesim_pose.theta 
+	// (the current orientation of robot) from the desired_angle_radians
+	// how did we get the turtlesim pose? we subscribed to the turtlesim_pose topic
+	// 
+	double relative_angle_radians = desired_angle_radians - turtlesim_pose.theta;
+	bool clockwise = ((relative_angle_radians < 0)? true:false);
+	// cout << desired_angle_radians << "," << turtlesim_pose.theta << "," << relative_angle_radians;
+	rotate(abs(relative_angle_radians), abs(relative_angle_radians), clockwise);
+}
+
+void poseCallback(const turtlesim::Pose::ConstPtr &pose_message)
+{
+	// this is setting the turtlesim_pose to the be last updated message
+	// from the callback function
+	turtlesim_pose.x = pose_message->x;
+	turtlesim_pose.y = pose_message->y;
+	turtlesim_pose.theta = pose_message->theta;
 }
