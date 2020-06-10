@@ -29,11 +29,11 @@ int main(int argc, char **argv)
 	// declare the publisher 
 	velocity_publisher = n.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", 10);
 
-	cout << "Enter your speed: " << endl;
+	cout << "Enter your speed: ";
 	cin >> speed;
-	cout << "Enter your distance: " << endl;
+	cout << "Enter your distance: ";
 	cin >> distance;
-	cout << "Forward?: " << endl;
+	cout << "Forward?: ";
 	cin >> isForward;
 	move(speed, distance, isForward);
 
