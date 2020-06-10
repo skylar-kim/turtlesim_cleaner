@@ -12,6 +12,11 @@ turtlesim::Pose turtlesim_pose;
 
 const double PI = 3.14159265359;
 
+const double x_min = 0.0;
+const double y_min = 0.0;
+const double x_max = 11.0;
+const double y_max = 11.0;
+
 
 // methods
 void move(double speed, double distance, bool isForward);
@@ -21,6 +26,8 @@ double setDesiredOrientation(double desired_angle_radians);
 void poseCallback(const turtlesim::Pose::ConstPtr & pose_message);
 void moveGoal(turtlesim::Pose goal_pose, double distance_tolerance);
 double getDistance(double x1, double y1, double x2, double y2);
+void gridClean();
+void spiralClean();
 
 
 int main(int argc, char **argv) 
@@ -67,12 +74,14 @@ int main(int argc, char **argv)
 	// loop_rate.sleep();
 	// setDesiredOrientation(degrees2radians(0));
 
-	turtlesim::Pose goal_pose;
-	goal_pose.x = 1;
-	goal_pose.y = 1;
-	goal_pose.theta = 0;
-	moveGoal(goal_pose, 0.01);
-	loop_rate.sleep();
+	// turtlesim::Pose pose;
+	// pose.x = 1;
+	// pose.y = 1;
+	// pose.theta = 0;
+	// moveGoal(pose, 0.01);
+	// loop_rate.sleep();
+
+	spiralClean();
 
 	ros::spin();
 	
@@ -211,7 +220,7 @@ double setDesiredOrientation(double desired_angle_radians)
 	double relative_angle_radians = desired_angle_radians - turtlesim_pose.theta;
 	bool clockwise = ((relative_angle_radians < 0)? true:false);
 	// cout << desired_angle_radians << "," << turtlesim_pose.theta << "," << relative_angle_radians;
-	rotate(abs(relative_angle_radians), abs(relative_angle_radians), clockwise);
+	rotate(degrees2radians(10), abs(relative_angle_radians), clockwise);
 }
 
 void poseCallback(const turtlesim::Pose::ConstPtr &pose_message)
@@ -259,3 +268,85 @@ void moveGoal(turtlesim::Pose goal_pose, double distance_tolerance)
 	velocity_publisher.publish(vel_msg);
 }
 
+void gridClean()
+{
+	ros::Rate loop(0.5);
+	turtlesim::Pose pose;
+	pose.x=1;
+	pose.y=1;
+	pose.theta=0;
+	moveGoal(pose, 0.01);
+	loop.sleep();
+	setDesiredOrientation(0);
+	loop.sleep();
+
+	move(2.0, 9.0, true);
+	loop.sleep();
+	rotate(degrees2radians(10), degrees2radians(90), false);
+	loop.sleep();
+	move(2.0, 9.0, true);
+
+
+	rotate(degrees2radians(10), degrees2radians(90), false);
+	loop.sleep();
+	move(2.0, 1.0, true);
+	rotate(degrees2radians(10), degrees2radians(90), false);
+	loop.sleep();
+	move(2.0, 9.0, true);
+
+	rotate(degrees2radians(30), degrees2radians(90), true);
+	loop.sleep();
+	move(2.0, 1.0, true);
+	rotate(degrees2radians(30), degrees2radians(90), true);
+	loop.sleep();
+	move(2.0, 9.0, true);
+
+
+	double distance = getDistance(turtlesim_pose.x, turtlesim_pose.y, x_max, y_max);
+
+}
+
+void spiralClean() 
+{
+	// create the Twist object, will put linear and angular velocity here
+	geometry_msgs::Twist vel_msg;
+	double count =0;
+
+
+	double constant_speed=4;
+	double vk = 1;
+	double wk = 2;
+	double rk = 0.5;
+	ros::Rate loop(1);
+
+	// the idea to make the robot go in a spiral: 
+	// increase the linear velocity so that the radius will also increase
+	// if the lin vel is constant, then we have a circle
+	// if the lin vel is increasing, then we have a spiral
+	do{
+		// depending on the number added to rk, how tight the spiral is will be affected
+		rk=rk+0.5;
+		vel_msg.linear.x =rk;
+		vel_msg.linear.y =0;
+		vel_msg.linear.z =0;
+		//set a random angular velocity in the y-axis
+		vel_msg.angular.x = 0;
+		vel_msg.angular.y = 0;
+		vel_msg.angular.z =constant_speed;//((vk)/(0.5+rk));
+
+		cout<<"vel_msg.linear.x = "<<vel_msg.linear.x<<endl;
+		cout<<"vel_msg.angular.z = "<<vel_msg.angular.z<<endl;
+		velocity_publisher.publish(vel_msg);
+		ros::spinOnce();
+
+		loop.sleep();
+		//vk = vel_msg.linear.x;
+		//wk = vel_msg.angular.z;
+		//rk = vk/wk;
+		cout<<rk<<", "<<vk <<", "<<wk<<endl;
+	}while((turtlesim_pose.x<10.5)&&(turtlesim_pose.y<10.5)); // do the spiral until the boundaries
+
+	// force the robot to stop
+	vel_msg.linear.x =0;
+	velocity_publisher.publish(vel_msg);
+}
