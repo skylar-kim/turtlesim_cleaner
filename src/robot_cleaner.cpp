@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	// moveGoal(pose, 0.01);
 	// loop_rate.sleep();
 
-	spiralClean();
+	gridClean();
 
 	ros::spin();
 	
@@ -275,6 +275,7 @@ void gridClean()
 	pose.x=1;
 	pose.y=1;
 	pose.theta=0;
+	
 	moveGoal(pose, 0.01);
 	loop.sleep();
 	setDesiredOrientation(0);
