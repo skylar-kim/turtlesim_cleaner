@@ -175,15 +175,42 @@ def gridClean():
  
     move(2.0, 9.0, True)
     rotate(degrees2radians(20), degrees2radians(90), False)
+
     move(2.0, 9.0, True)
     rotate(degrees2radians(20), degrees2radians(90), False)
-    move(2.0, 1.0, True)
-    rotate(degrees2radians(20), degrees2radians(90), False)
-    move(2.0, 9.0, True)
-    rotate(degrees2radians(30), degrees2radians(90), True)
-    move(2.0, 1.0, True)
-    rotate(degrees2radians(30), degrees2radians(90), True)
-    move(2.0, 9.0, True)
+
+    for i in range(0,6):
+    	rospy.loginfo("starting loop: %s", i)
+    	move(2.0, 1.0, True)
+    	rotate(degrees2radians(20), degrees2radians(90), False)
+
+    	move(2.0, 9.0, True)
+    	rotate(degrees2radians(30), degrees2radians(90), True)
+
+    	move(2.0, 1.0, True)
+    	rotate(degrees2radians(30), degrees2radians(90), True)
+
+    	move(2.0, 9.0, True)
+    	rotate(degrees2radians(30), degrees2radians(90), False)
+
+    	rospy.loginfo("ending loop: %s", i)
+
+    
+    # setDesiredOrientation(0)
+    
+
+    # move(2.0, 1.0, True)
+    # rotate(degrees2radians(30), degrees2radians(90), False)
+
+    # move(2.0, 9.0, True)
+    # rotate(degrees2radians(30), degrees2radians(90), True)
+
+    # move(2.0, 1.0, True)
+    # rotate(degrees2radians(30), degrees2radians(90), True)
+
+    # move(2.0, 9.0, True)
+    # rotate(degrees2radians(30), degrees2radians(90), False)
+
     pass
 
 def spiralClean():
